@@ -14,9 +14,53 @@ crystal run src/bin.cr
 
 A web server will listen at port 8080.
 
-- You can use `GET /` to view the `help` file.
-- Use `GET /pasteid` to see a paste.
-- Use `POST /pastes` to create a new paste.
+###### Homepage
+
+You can `GET /` and `GET /help.txt` to view the help text.
+
+The help text can be changed by modifying the paste `help.txt` directly.
+
+###### Example
+
+```sh
+$ curl http://127.0.0.1:8080
+See https://github.com/7wf/bin.cr
+```
+
+> If you'd like to modify the help text, you can edit `pastes/help.txt`.
+
+##### Creating a paste
+
+To create pastes, you can use `POST /pastes` with body contents.
+
+The server should reply with the ID of the generated paste.
+
+###### Example
+
+```sh
+$ echo "Hello, world." | http -b POST http://127.0.0.1:8080/pastes
+n5fl
+
+$ cat file.txt | http -b POST http://127.0.0.1:8080/pastes
+o2fK
+```
+
+##### Viewing a paste
+
+To view a paste, you need to have the paste ID.
+
+With the paste ID you can `GET /{paste id}` and the server will reply with paste contents.
+
+###### Example
+
+```sh
+$ http GET http://127.0.0.1:8080/n5fl
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Length: 14
+
+Hello, world.
+```
 
 #### Contributing
 
