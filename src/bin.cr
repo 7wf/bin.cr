@@ -4,12 +4,6 @@ require "hashids"
 class Application
   include Router
 
-  def self.new(pastes_directory : Path)
-    application = Application.allocate
-    application.initialize pastes_directory
-    application
-  end
-
   def initialize(pastes_directory : Path)
     @pastes_directory_path = pastes_directory
     @hashids = Hashids.new
