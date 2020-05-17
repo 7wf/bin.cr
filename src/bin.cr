@@ -1,47 +1,19 @@
 require "router"
 require "hashids"
 
+require "./paste_repository.cr"
+
 class Application
   include Router
 
-  def initialize(pastes_directory : Path)
-    @pastes_directory_path = pastes_directory
+  def initialize(paste_repository : PasteRepository)
+    @pastes = paste_repository
     @hashids = Hashids.new
-  end
-
-  def count_pastes
-    pastes_directory = Dir.new(@pastes_directory_path.to_s)
-    pastes_directory.children.size
-  end
-
-  def get_paste_path(paste_id)
-    @pastes_directory_path.join paste_id
-  end
-
-  def get_paste(paste_id = "help")
-    paste_path = get_paste_path paste_id
-
-    begin
-      File.read paste_path
-    rescue
-      nil
-    end
-  end
-
-  def create_paste(paste_id, paste_contents)
-    paste_path = @pastes_directory_path.join paste_id
-    File.write(paste_path, paste_contents)
-  end
-
-  def exists_paste(paste_id)
-    paste_path = get_paste_path paste_id
-
-    File.exists? paste_path
   end
 
   def routes
     get "/" do |context, paramethers|
-      help_text = get_paste "help.txt"
+      help_text = @pastes.retrieve("help.txt")
 
       if help_text == nil
         context.response.print "Failed to get help text."
@@ -53,11 +25,11 @@ class Application
     end
 
     post "/pastes" do |context, paramethers|
-      pastes_size = count_pastes
+      pastes_size = @pastes.count
       paste_contents = context.request.body.not_nil!.gets_to_end
       paste_id = @hashids.encode [1, pastes_size + 1]
 
-      create_paste paste_id, paste_contents
+      @pastes.store(paste_id, paste_contents)
 
       context.response.print paste_id
       context
@@ -65,7 +37,7 @@ class Application
 
     get "/:id" do |context, paramethers|
       paste_id = paramethers["id"]
-      paste_contents = get_paste paste_id
+      paste_contents = @pastes.retrieve(paste_id)
 
       if paste_contents != nil
         context.response.print paste_contents
@@ -88,7 +60,9 @@ end
 PASTES_PATH = Path.new "pastes"
 SERVER_PORT = 8080
 
-application = Application.new PASTES_PATH
+paste_repository = PasteRepository.new(PASTES_PATH)
+
+application = Application.new(paste_repository)
 application.routes
 
 puts "The server is listening at port #{SERVER_PORT}"
